@@ -21,8 +21,8 @@ var ErrUserEmailMissing = errors.New("user email was not specified")
 var ErrUserNameMissing = errors.New("user name was not specified")
 var ErrUserDeletionFailed = errors.New("user deletion failed")
 
-// UserManager provides basic CRUD database operations for Users.
-type UserManager interface {
+// UserDataManager provides basic CRUD database operations for Users.
+type UserDataManager interface {
 	GetUser(ctx context.Context, id string) (*model.User, error)
 	CreateUser(ctx context.Context, user *model.User) (*model.User, error)
 	UpdateUser(ctx context.Context, user *model.User) error
@@ -31,12 +31,12 @@ type UserManager interface {
 
 // UserService provides functionality to manage Users.
 type UserService struct {
-	db  UserManager
+	db  UserDataManager
 	log *logrus.Logger
 }
 
 // NewUserService creates a new instance of a UserService.
-func NewUserService(db UserManager, log *logrus.Logger) (*UserService, error) {
+func NewUserService(db UserDataManager, log *logrus.Logger) (*UserService, error) {
 	if db == nil {
 		return nil, errors.New("db is required")
 	}
