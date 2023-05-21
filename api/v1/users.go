@@ -3,6 +3,7 @@ package v1
 import (
 	"context"
 	"errors"
+	"net/mail"
 	"strings"
 
 	"github.com/readactedworks/go-http-server/api/model"
@@ -18,25 +19,32 @@ const (
 
 var ErrUserIdMissing = errors.New("user id was not specified")
 var ErrUserEmailMissing = errors.New("user email was not specified")
+var ErrUserEmailInvalid = errors.New("user email was invalid")
 var ErrUserNameMissing = errors.New("user name was not specified")
 var ErrUserDeletionFailed = errors.New("user deletion failed")
+var ErrUserPasswordMissing = errors.New("user password was not specified")
 
 // UserDataManager provides basic CRUD database operations for Users.
 type UserDataManager interface {
 	GetUser(ctx context.Context, id string) (*model.User, error)
-	CreateUser(ctx context.Context, user *model.User) (*model.User, error)
+	CreateUser(ctx context.Context, user *model.User) error
 	UpdateUser(ctx context.Context, user *model.User) error
 	DeleteUser(ctx context.Context, id string) error
 }
 
 // UserService provides functionality to manage Users.
 type UserService struct {
+	model.UnimplementedUserServiceServer
+
 	db  UserDataManager
 	log *logrus.Logger
 }
 
 // NewUserService creates a new instance of a UserService.
-func NewUserService(db UserDataManager, log *logrus.Logger) (*UserService, error) {
+func NewUserService(
+	db UserDataManager,
+	log *logrus.Logger,
+) (*UserService, error) {
 	if db == nil {
 		return nil, errors.New("db is required")
 	}
@@ -61,7 +69,7 @@ func (s *UserService) GetUser(
 	user, err := s.db.GetUser(ctx, request.UserId)
 	if err != nil {
 		s.log.
-			WithFields(logrus.Fields{userLogField: request.UserId}).
+			WithField(userLogField, request.UserId).
 			Error(err)
 
 		if strings.Contains(err.Error(), notFound) {
@@ -85,14 +93,14 @@ func (s *UserService) CreateUser(
 	}
 
 	user := &model.User{
-		Name:     request.Name,
-		Email:    request.Email,
-		Password: request.Password,
+		Name:     strings.TrimSpace(request.Name),
+		Email:    strings.TrimSpace(request.Email),
+		Password: strings.TrimSpace(request.Password),
 	}
 
-	if _, err := s.db.CreateUser(ctx, user); err != nil {
+	if err := s.db.CreateUser(ctx, user); err != nil {
 		s.log.
-			WithFields(logrus.Fields{userLogField: user.Id}).
+			WithField(userLogField, user.Id).
 			Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -109,7 +117,23 @@ func (s *UserService) UpdateUser(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	return &model.UpdateUserResponse{}, nil
+	user := &model.User{
+		Id:       strings.TrimSpace(request.Id),
+		Name:     strings.TrimSpace(request.Name),
+		Email:    strings.TrimSpace(request.Email),
+		Password: strings.TrimSpace(request.Password),
+	}
+
+	if err := s.db.UpdateUser(ctx, user); err != nil {
+		s.log.
+			WithField(userLogField, user.Id).
+			Error(err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &model.UpdateUserResponse{
+		Updated: true,
+	}, nil
 }
 
 // DeleteUser removes an existing User from the database.
@@ -123,7 +147,7 @@ func (s *UserService) DeleteUser(
 
 	if err := s.db.DeleteUser(ctx, request.UserId); err != nil {
 		s.log.
-			WithFields(logrus.Fields{userLogField: request.UserId}).
+			WithField(userLogField, request.UserId).
 			Error(err)
 		return nil, status.Error(codes.Internal, ErrUserDeletionFailed.Error())
 	}
@@ -131,7 +155,6 @@ func (s *UserService) DeleteUser(
 	return &model.DeleteUserResponse{Deleted: true}, nil
 }
 
-// check get user request validity
 func isValidGetUserRequest(request *model.GetUserRequest) error {
 	if strings.TrimSpace(request.UserId) == "" {
 		return ErrUserIdMissing
@@ -140,7 +163,6 @@ func isValidGetUserRequest(request *model.GetUserRequest) error {
 	return nil
 }
 
-// check create user request validity
 func isValidCreateUserRequest(request *model.CreateUserRequest) error {
 	if strings.TrimSpace(request.Name) == "" {
 		return ErrUserNameMissing
@@ -148,11 +170,18 @@ func isValidCreateUserRequest(request *model.CreateUserRequest) error {
 	if strings.TrimSpace(request.Email) == "" {
 		return ErrUserEmailMissing
 	}
+	if _, err := mail.ParseAddress(
+		strings.TrimSpace(request.Email),
+	); err != nil {
+		return ErrUserEmailInvalid
+	}
+	if strings.TrimSpace(request.Password) == "" {
+		return ErrUserPasswordMissing
+	}
 
 	return nil
 }
 
-// check update user request validity
 func isValidUpdateUserRequest(request *model.UpdateUserRequest) error {
 	if strings.TrimSpace(request.Id) == "" {
 		return ErrUserIdMissing
@@ -163,11 +192,17 @@ func isValidUpdateUserRequest(request *model.UpdateUserRequest) error {
 	if strings.TrimSpace(request.Email) == "" {
 		return ErrUserEmailMissing
 	}
-
+	if _, err := mail.ParseAddress(
+		strings.TrimSpace(request.Email),
+	); err != nil {
+		return ErrUserEmailInvalid
+	}
+	if strings.TrimSpace(request.Password) == "" {
+		return ErrUserPasswordMissing
+	}
 	return nil
 }
 
-// check delete user request validity
 func isValidDeleteUserRequest(request *model.DeleteUserRequest) error {
 	if strings.TrimSpace(request.UserId) == "" {
 		return ErrUserIdMissing

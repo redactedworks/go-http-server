@@ -2,6 +2,7 @@ package v1
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -14,12 +15,12 @@ import (
 type testUserService struct {
 	service *UserService
 	ctx     context.Context
-	manager *mocks.MockUserManager
+	manager *mocks.MockUserDataManager
 }
 
 func newTestUserService(t *testing.T) *testUserService {
 	ctrl := gomock.NewController(t)
-	manager := mocks.NewMockUserManager(ctrl)
+	manager := mocks.NewMockUserDataManager(ctrl)
 	service, _ := NewUserService(manager, logrus.New())
 
 	return &testUserService{
@@ -44,6 +45,52 @@ func TestGetUser_ValidRequest_ShouldSucceed(t *testing.T) {
 	response, err := tester.service.GetUser(tester.ctx, request)
 	assert.NoError(t, err)
 	assertUserEqual(t, expected, response.User)
+}
+
+func TestGetUser_InvalidRequest_ShouldError(t *testing.T) {
+	tester := newTestUserService(t)
+	request := &model.GetUserRequest{
+		UserId: "",
+	}
+
+	response, err := tester.service.GetUser(tester.ctx, request)
+	assert.Error(t, err)
+	assert.Nil(t, response)
+}
+
+func TestGetUser_DbGetUserError_ShouldError(t *testing.T) {
+	tester := newTestUserService(t)
+	expected := generateRandomUser()
+	request := &model.GetUserRequest{
+		UserId: expected.Id,
+	}
+
+	tester.manager.EXPECT().
+		GetUser(tester.ctx, expected.Id).
+		Return(nil, errors.New("test-error")).
+		Times(1)
+
+	response, err := tester.service.GetUser(tester.ctx, request)
+	assert.Error(t, err)
+	assert.Nil(t, response)
+}
+
+func TestCreateUser_ValidRequest_ShouldSucceed(t *testing.T) {
+	tester := newTestUserService(t)
+	expected := generateRandomUser()
+	request := &model.CreateUserRequest{
+		Name:     expected.Name,
+		Email:    expected.Email,
+		Password: expected.Password,
+	}
+
+	tester.manager.EXPECT().
+		CreateUser(tester.ctx, expected).
+		Return(expected, nil).
+		Times(1)
+
+	_, err := tester.service.CreateUser(tester.ctx, request)
+	assert.NoError(t, err)
 }
 
 func generateRandomUser() *model.User {
