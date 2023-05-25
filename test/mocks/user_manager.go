@@ -36,12 +36,11 @@ func (m *MockUserDataManager) EXPECT() *MockUserDataManagerMockRecorder {
 }
 
 // CreateUser mocks base method.
-func (m *MockUserDataManager) CreateUser(ctx context.Context, user *model.User) (*model.User, error) {
+func (m *MockUserDataManager) CreateUser(ctx context.Context, user *model.User) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateUser", ctx, user)
-	ret0, _ := ret[0].(*model.User)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // CreateUser indicates an expected call of CreateUser.

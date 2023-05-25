@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"firebase.google.com/go/db"
+	metrics "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/readactedworks/go-http-server/api/model"
 	"github.com/readactedworks/go-http-server/api/v1"
 	"github.com/readactedworks/go-http-server/pkg/firebase"
@@ -20,6 +22,7 @@ func main() {
 	server := grpc.NewServer()
 	registerUserService(server, database)
 	registerCompanyService(server, database)
+	registerServiceMetrics(server, prometheus.DefaultRegisterer)
 }
 
 func registerUserService(server *grpc.Server, database *db.Client) {
@@ -33,4 +36,15 @@ func registerUserService(server *grpc.Server, database *db.Client) {
 }
 
 func registerCompanyService(server *grpc.Server, database *db.Client) {
+
+}
+
+func registerServiceMetrics(server *grpc.Server, reg prometheus.Registerer) {
+	srvMetrics := metrics.NewRegisteredServerMetrics(
+		reg,
+		metrics.WithServerHandlingTimeHistogram(),
+	)
+	registry := prometheus.NewRegistry()
+	registry.MustRegister(srvMetrics)
+	srvMetrics.InitializeMetrics(server)
 }

@@ -17,12 +17,14 @@ const (
 	userLogField = "user_id"
 )
 
-var ErrUserIdMissing = errors.New("user id was not specified")
-var ErrUserEmailMissing = errors.New("user email was not specified")
-var ErrUserEmailInvalid = errors.New("user email was invalid")
-var ErrUserNameMissing = errors.New("user name was not specified")
-var ErrUserDeletionFailed = errors.New("user deletion failed")
-var ErrUserPasswordMissing = errors.New("user password was not specified")
+var (
+	ErrUserIdMissing       = errors.New("user id was not specified")
+	ErrUserEmailMissing    = errors.New("user email was not specified")
+	ErrUserEmailInvalid    = errors.New("user email was invalid")
+	ErrUserNameMissing     = errors.New("user name was not specified")
+	ErrUserDeletionFailed  = errors.New("user deletion failed")
+	ErrUserPasswordMissing = errors.New("user password was not specified")
+)
 
 // UserDataManager provides basic CRUD database operations for Users.
 type UserDataManager interface {
@@ -62,7 +64,7 @@ func (s *UserService) GetUser(
 	ctx context.Context,
 	request *model.GetUserRequest,
 ) (*model.GetUserResponse, error) {
-	if err := isValidGetUserRequest(request); err != nil {
+	if err := validateGetUserRequest(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -88,7 +90,7 @@ func (s *UserService) CreateUser(
 	ctx context.Context,
 	request *model.CreateUserRequest,
 ) (*model.CreateUserResponse, error) {
-	if err := isValidCreateUserRequest(request); err != nil {
+	if err := validateCreateUserRequest(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -113,7 +115,7 @@ func (s *UserService) UpdateUser(
 	ctx context.Context,
 	request *model.UpdateUserRequest,
 ) (*model.UpdateUserResponse, error) {
-	if err := isValidUpdateUserRequest(request); err != nil {
+	if err := validateUpdateUserRequest(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -141,7 +143,7 @@ func (s *UserService) DeleteUser(
 	ctx context.Context,
 	request *model.DeleteUserRequest,
 ) (*model.DeleteUserResponse, error) {
-	if err := isValidDeleteUserRequest(request); err != nil {
+	if err := validateDeleteUserRequest(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -155,7 +157,7 @@ func (s *UserService) DeleteUser(
 	return &model.DeleteUserResponse{Deleted: true}, nil
 }
 
-func isValidGetUserRequest(request *model.GetUserRequest) error {
+func validateGetUserRequest(request *model.GetUserRequest) error {
 	if strings.TrimSpace(request.UserId) == "" {
 		return ErrUserIdMissing
 	}
@@ -163,7 +165,7 @@ func isValidGetUserRequest(request *model.GetUserRequest) error {
 	return nil
 }
 
-func isValidCreateUserRequest(request *model.CreateUserRequest) error {
+func validateCreateUserRequest(request *model.CreateUserRequest) error {
 	if strings.TrimSpace(request.Name) == "" {
 		return ErrUserNameMissing
 	}
@@ -182,7 +184,7 @@ func isValidCreateUserRequest(request *model.CreateUserRequest) error {
 	return nil
 }
 
-func isValidUpdateUserRequest(request *model.UpdateUserRequest) error {
+func validateUpdateUserRequest(request *model.UpdateUserRequest) error {
 	if strings.TrimSpace(request.Id) == "" {
 		return ErrUserIdMissing
 	}
@@ -203,7 +205,7 @@ func isValidUpdateUserRequest(request *model.UpdateUserRequest) error {
 	return nil
 }
 
-func isValidDeleteUserRequest(request *model.DeleteUserRequest) error {
+func validateDeleteUserRequest(request *model.DeleteUserRequest) error {
 	if strings.TrimSpace(request.UserId) == "" {
 		return ErrUserIdMissing
 	}
