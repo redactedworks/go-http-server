@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"firebase.google.com/go/db"
 	"github.com/golang/mock/gomock"
 	"github.com/readactedworks/go-http-server/api/model"
 	"github.com/readactedworks/go-http-server/internal/test/mocks"
@@ -12,34 +13,50 @@ import (
 )
 
 type testUserDatabase struct {
-	ctrl     *gomock.Controller
-	creator  *mocks.MockReferenceCreator
-	operator *mocks.MockReferenceOperator
-	db       *UserDatabase
-	ctx      context.Context
+	ctrl               *gomock.Controller
+	refCreator         *mocks.MockCreator
+	refOperatorCreator *mocks.MockOperatorCreator
+	refOperator        *mocks.MockOperator
+
+	db  *UserDatabase
+	ctx context.Context
 }
 
 func setupTestUserDatabase(t *testing.T) testUserDatabase {
 	ctrl := gomock.NewController(t)
-	creator := mocks.NewMockReferenceCreator(ctrl)
-	operator := mocks.NewMockReferenceOperator(ctrl)
-	database := NewUserDatabase(creator)
+	creator := mocks.NewMockCreator(ctrl)
+	operator := mocks.NewMockOperator(ctrl)
+	opCreator := mocks.NewMockOperatorCreator(ctrl)
 
 	return testUserDatabase{
-		creator:  creator,
-		db:       database,
-		operator: operator,
-		ctrl:     ctrl,
-		ctx:      context.Background(),
+		refCreator: creator,
+		db: &UserDatabase{
+			referenceCreator:  creator,
+			referenceOperator: opCreator,
+		},
+		refOperator:        operator,
+		refOperatorCreator: opCreator,
+		ctrl:               ctrl,
+		ctx:                context.Background(),
 	}
 }
 
 func TestGetUser_ValidArgs_ShouldSucceed(t *testing.T) {
 	tester := setupTestUserDatabase(t)
 	expected := utils.GenerateRandomUser()
+	ref := &db.Ref{
+		Key:  expected.Id,
+		Path: userReferenceFmt,
+	}
 
 	var actual model.User
-	tester.operator.EXPECT().
+
+	tester.refCreator.EXPECT().
+		NewRef("users/" + expected.Id).
+		Return(ref).
+		Times(1)
+
+	tester.refOperator.EXPECT().
 		Get(tester.ctx, &actual).
 		DoAndReturn(func(ctx context.Context, value any) error {
 			*value.(*model.User) = *expected
@@ -47,21 +64,12 @@ func TestGetUser_ValidArgs_ShouldSucceed(t *testing.T) {
 		}).
 		Times(1)
 
-	tester.creator.EXPECT().
-		NewRef("users/" + expected.Id).
-		Return(tester.operator).
+	tester.refOperatorCreator.EXPECT().
+		NewOperator(gomock.Any()).
+		Return(tester.refOperator).
 		Times(1)
 
 	response, err := tester.db.GetUser(tester.ctx, expected.Id)
 	assert.NoError(t, err)
 	assert.Equal(t, expected, response)
-}
-
-func generateRandomUser() *model.User {
-	return &model.User{
-		Id:       "1",
-		Name:     "test",
-		Email:    "",
-		Password: "",
-	}
 }

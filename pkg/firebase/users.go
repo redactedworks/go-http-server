@@ -17,13 +17,15 @@ const (
 // UserDatabase provides access to User-specific actions in Firebase real-time
 // data store.
 type UserDatabase struct {
-	referenceCreator references.Creator
+	referenceCreator  references.Creator
+	referenceOperator references.OperatorCreator
 }
 
 // NewUserDatabase creates a new instance of UserDatabase.
 func NewUserDatabase(db references.Creator) *UserDatabase {
 	return &UserDatabase{
-		referenceCreator: db,
+		referenceCreator:  db,
+		referenceOperator: &references.Factory{},
 	}
 }
 
@@ -36,10 +38,10 @@ func (u *UserDatabase) GetUser(
 		return nil, errors.New("id was missing")
 	}
 
-	entry := fmt.Sprintf(userReferenceFmt, id)
-	ref := u.referenceCreator.NewRef(entry)
+	ref := u.referenceCreator.NewRef(fmt.Sprintf(userReferenceFmt, id))
+	operator := u.referenceOperator.NewOperator(ref)
 	var user model.User
-	if err := ref.Get(ctx, &user); err != nil {
+	if err := operator.Get(ctx, &user); err != nil {
 		return nil, err
 	}
 
@@ -48,9 +50,9 @@ func (u *UserDatabase) GetUser(
 
 // CreateUser todo:describe
 func (u *UserDatabase) CreateUser(ctx context.Context, user *model.User) error {
-	entry := fmt.Sprintf(userReferenceFmt, user.Id)
-	ref := u.referenceCreator.NewRef(entry)
-	if err := ref.Set(ctx, &user); err != nil {
+	ref := u.referenceCreator.NewRef(fmt.Sprintf(userReferenceFmt, user.Id))
+	operator := u.referenceOperator.NewOperator(ref)
+	if err := operator.Set(ctx, &user); err != nil {
 		return err
 	}
 
@@ -59,9 +61,9 @@ func (u *UserDatabase) CreateUser(ctx context.Context, user *model.User) error {
 
 // UpdateUser todo:describe
 func (u *UserDatabase) UpdateUser(ctx context.Context, user *model.User) error {
-	entry := fmt.Sprintf(userReferenceFmt, user.Id)
-	ref := u.referenceCreator.NewRef(entry)
-	if err := ref.Set(ctx, &user); err != nil {
+	ref := u.referenceCreator.NewRef(fmt.Sprintf(userReferenceFmt, user.Id))
+	operator := u.referenceOperator.NewOperator(ref)
+	if err := operator.Set(ctx, &user); err != nil {
 		return err
 	}
 
@@ -70,9 +72,9 @@ func (u *UserDatabase) UpdateUser(ctx context.Context, user *model.User) error {
 
 // DeleteUser todo:describe
 func (u *UserDatabase) DeleteUser(ctx context.Context, id string) error {
-	entry := fmt.Sprintf(userReferenceFmt, id)
-	ref := u.referenceCreator.NewRef(entry)
-	if err := ref.Delete(ctx); err != nil {
+	ref := u.referenceCreator.NewRef(fmt.Sprintf(userReferenceFmt, id))
+	operator := u.referenceOperator.NewOperator(ref)
+	if err := operator.Delete(ctx); err != nil {
 		return err
 	}
 
