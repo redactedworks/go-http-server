@@ -10,18 +10,18 @@ import (
 	"github.com/readactedworks/go-http-server/api/model"
 	"github.com/readactedworks/go-http-server/api/v1"
 	"github.com/readactedworks/go-http-server/pkg/firebase"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
 func main() {
 	database, err := db.NewClient(context.Background(), nil)
 	if err != nil {
-		panic("")
+		panic("database could not be initialized")
 	}
 
 	server := grpc.NewServer()
 	registerUserService(server, database)
-	registerCompanyService(server, database)
 	registerServiceMetrics(server, prometheus.DefaultRegisterer)
 }
 
@@ -33,10 +33,7 @@ func registerUserService(server *grpc.Server, database *db.Client) {
 	}
 
 	model.RegisterUserServiceServer(server, svc)
-}
-
-func registerCompanyService(server *grpc.Server, database *db.Client) {
-
+	logrus.Info("user service registered")
 }
 
 func registerServiceMetrics(server *grpc.Server, reg prometheus.Registerer) {
@@ -47,4 +44,5 @@ func registerServiceMetrics(server *grpc.Server, reg prometheus.Registerer) {
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(srvMetrics)
 	srvMetrics.InitializeMetrics(server)
+	logrus.Info("service metrics registered")
 }

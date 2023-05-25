@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/readactedworks/go-http-server/api/model"
+	"github.com/readactedworks/go-http-server/pkg/firebase/references"
 )
 
 const (
@@ -16,11 +17,11 @@ const (
 // UserDatabase provides access to User-specific actions in Firebase real-time
 // data store.
 type UserDatabase struct {
-	referenceCreator ReferenceCreator
+	referenceCreator references.Creator
 }
 
 // NewUserDatabase creates a new instance of UserDatabase.
-func NewUserDatabase(db ReferenceCreator) *UserDatabase {
+func NewUserDatabase(db references.Creator) *UserDatabase {
 	return &UserDatabase{
 		referenceCreator: db,
 	}
@@ -36,9 +37,9 @@ func (u *UserDatabase) GetUser(
 	}
 
 	entry := fmt.Sprintf(userReferenceFmt, id)
-	db := u.referenceCreator.NewRef(entry)
+	ref := u.referenceCreator.NewRef(entry)
 	var user model.User
-	if err := db.Get(ctx, &user); err != nil {
+	if err := ref.Get(ctx, &user); err != nil {
 		return nil, err
 	}
 

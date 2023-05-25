@@ -7,8 +7,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/readactedworks/go-http-server/api/model"
-	"github.com/readactedworks/go-http-server/test/mocks"
-	"github.com/readactedworks/go-http-server/test/utils"
+	"github.com/readactedworks/go-http-server/internal/test/mocks"
+	"github.com/readactedworks/go-http-server/internal/test/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -33,7 +33,7 @@ func newTestUserService(t *testing.T) *testUserService {
 
 func TestGetUser_ValidRequest_ShouldSucceed(t *testing.T) {
 	tester := newTestUserService(t)
-	expected := generateRandomUser()
+	expected := utils.GenerateRandomUser()
 	request := &model.GetUserRequest{
 		UserId: expected.Id,
 	}
@@ -61,7 +61,7 @@ func TestGetUser_InvalidRequest_ShouldError(t *testing.T) {
 
 func TestGetUser_DbGetUserError_ShouldError(t *testing.T) {
 	tester := newTestUserService(t)
-	expected := generateRandomUser()
+	expected := utils.GenerateRandomUser()
 	request := &model.GetUserRequest{
 		UserId: expected.Id,
 	}
@@ -78,7 +78,7 @@ func TestGetUser_DbGetUserError_ShouldError(t *testing.T) {
 
 func TestCreateUser_ValidRequest_ShouldSucceed(t *testing.T) {
 	tester := newTestUserService(t)
-	expected := generateRandomUser()
+	expected := utils.GenerateRandomUser()
 	expected.Id = ""
 	request := &model.CreateUserRequest{
 		Name:     expected.Name,
@@ -93,16 +93,6 @@ func TestCreateUser_ValidRequest_ShouldSucceed(t *testing.T) {
 
 	_, err := tester.service.CreateUser(tester.ctx, request)
 	assert.NoError(t, err)
-}
-
-func generateRandomUser() *model.User {
-	return &model.User{
-		Id:   utils.RandomPrefixedString("id", 10),
-		Name: utils.RandomPrefixedString("name", 10),
-		Email: utils.RandomPrefixedString("email", 5) +
-			"@" + utils.RandomPrefixedString("domain", 5) + ".com",
-		Password: utils.RandomPrefixedString("pwd", 10),
-	}
 }
 
 func assertUserEqual(t *testing.T, expected *model.User, actual *model.User) {

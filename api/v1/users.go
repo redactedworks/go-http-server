@@ -36,10 +36,10 @@ type UserDataManager interface {
 
 // UserService provides functionality to manage Users.
 type UserService struct {
-	model.UnimplementedUserServiceServer
-
 	db  UserDataManager
 	log *logrus.Logger
+
+	model.UnimplementedUserServiceServer
 }
 
 // NewUserService creates a new instance of a UserService.
