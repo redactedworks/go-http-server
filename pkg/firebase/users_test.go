@@ -31,8 +31,10 @@ func setupTestUserDatabase(t *testing.T) testUserDatabase {
 	return testUserDatabase{
 		refCreator: creator,
 		db: &UserDatabase{
-			referenceCreator:  creator,
-			referenceOperator: opCreator,
+			Database: Database{
+				referenceCreator:  creator,
+				referenceOperator: opCreator,
+			},
 		},
 		refOperator:        operator,
 		refOperatorCreator: opCreator,

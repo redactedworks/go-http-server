@@ -17,16 +17,16 @@ const (
 // UserDatabase provides access to User-specific actions in Firebase real-time
 // data store.
 type UserDatabase struct {
-	referenceCreator  references.Creator
-	referenceOperator references.OperatorCreator
+	Database
 }
 
 // NewUserDatabase creates a new instance of UserDatabase.
 func NewUserDatabase(db references.Creator) *UserDatabase {
 	return &UserDatabase{
-		referenceCreator:  db,
-		referenceOperator: &references.Factory{},
-	}
+		Database: Database{
+			referenceCreator:  db,
+			referenceOperator: &references.Factory{},
+		}}
 }
 
 // GetUser retrieves a user from the Firebase real-time data store.
