@@ -29,7 +29,7 @@ func NewUserDatabase(db references.Creator) *UserDatabase {
 	}
 }
 
-// GetUser todo:describe
+// GetUser retrieves a user from the Firebase real-time data store.
 func (u *UserDatabase) GetUser(
 	ctx context.Context,
 	id string,
@@ -48,7 +48,7 @@ func (u *UserDatabase) GetUser(
 	return &user, nil
 }
 
-// CreateUser todo:describe
+// CreateUser generates a new user in the Firebase real-time data store.
 func (u *UserDatabase) CreateUser(ctx context.Context, user *model.User) error {
 	ref := u.referenceCreator.NewRef(fmt.Sprintf(userReferenceFmt, user.Id))
 	operator := u.referenceOperator.NewOperator(ref)
@@ -59,7 +59,7 @@ func (u *UserDatabase) CreateUser(ctx context.Context, user *model.User) error {
 	return nil
 }
 
-// UpdateUser todo:describe
+// UpdateUser updates a user in the Firebase real-time data store.
 func (u *UserDatabase) UpdateUser(ctx context.Context, user *model.User) error {
 	ref := u.referenceCreator.NewRef(fmt.Sprintf(userReferenceFmt, user.Id))
 	operator := u.referenceOperator.NewOperator(ref)
@@ -70,7 +70,7 @@ func (u *UserDatabase) UpdateUser(ctx context.Context, user *model.User) error {
 	return nil
 }
 
-// DeleteUser todo:describe
+// DeleteUser removes a user from the Firebase real-time data store.
 func (u *UserDatabase) DeleteUser(ctx context.Context, id string) error {
 	ref := u.referenceCreator.NewRef(fmt.Sprintf(userReferenceFmt, id))
 	operator := u.referenceOperator.NewOperator(ref)

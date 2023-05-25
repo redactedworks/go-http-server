@@ -65,7 +65,7 @@ func TestGetUser_ValidArgs_ShouldSucceed(t *testing.T) {
 		Times(1)
 
 	tester.refOperatorCreator.EXPECT().
-		NewOperator(gomock.Any()).
+		NewOperator(ref).
 		Return(tester.refOperator).
 		Times(1)
 
