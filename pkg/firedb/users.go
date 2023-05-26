@@ -1,4 +1,4 @@
-package firebase
+package firedb
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/readactedworks/go-http-server/api/model"
-	"github.com/readactedworks/go-http-server/pkg/firebase/references"
+	"github.com/readactedworks/go-http-server/pkg/firedb/references"
 )
 
 const (

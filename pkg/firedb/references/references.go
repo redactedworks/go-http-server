@@ -6,7 +6,7 @@ import (
 	"firebase.google.com/go/db"
 )
 
-// Contains all the wrapping logic to mock the firebase implementation
+// Contains all the wrapping logic to mock the firedb implementation
 // because the library makes it difficult.
 
 // Creator generates a new db.Ref from a path, permitting operations
