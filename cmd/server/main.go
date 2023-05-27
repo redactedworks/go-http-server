@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net"
+	"os"
 
 	firebase "firebase.google.com/go"
 	"firebase.google.com/go/db"
@@ -15,17 +17,20 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 const (
-	dbUrl     = ""
-	credsFile = "config/go-backend-firebase.json"
+	tcp         = "tcp"
+	port        = 9099
+	dbUrlEnvVar = "FIREDB_URL"
+	credFile    = "config/go-backend-firebase.json"
 )
 
 func main() {
 	ctx := context.Background()
-	conf := &firebase.Config{DatabaseURL: dbUrl}
-	opt := option.WithCredentialsFile(credsFile)
+	conf := &firebase.Config{DatabaseURL: os.Getenv(dbUrlEnvVar)}
+	opt := option.WithCredentialsFile(credFile)
 	app, err := firebase.NewApp(ctx, conf, opt)
 	if err != nil {
 		log.Fatalln("error in initializing firebase app: ", err)
@@ -38,12 +43,17 @@ func main() {
 
 	server := grpc.NewServer()
 	registerUserService(server, database)
+	reflection.Register(server)
+	lis, err := net.Listen(tcp, fmt.Sprintf("localhost:%d", port))
+	if err := server.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
 	//registerServiceMetrics(server, prometheus.DefaultRegisterer)
 }
 
 func registerUserService(server *grpc.Server, database *db.Client) {
 	users := firedb.NewUserDatabase(database)
-	svc, err := v1.NewUserService(users, nil)
+	svc, err := v1.NewUserService(users, logrus.New())
 	if err != nil {
 		panic(fmt.Sprintf("user service failed initialization - " + err.Error()))
 	}
