@@ -21,16 +21,16 @@ import (
 )
 
 const (
-	tcp         = "tcp"
-	port        = 9099
-	dbUrlEnvVar = "FIREDB_URL"
-	credFile    = "config/go-backend-firebase.json"
+	tcp                = "tcp"
+	port               = 9099
+	firebaseUrlEnvVar  = "FIREBASE_DB_URL"
+	firebaseCredEnvVar = "FIREBASE_CRED_FILEPATH"
 )
 
 func main() {
 	ctx := context.Background()
-	conf := &firebase.Config{DatabaseURL: os.Getenv(dbUrlEnvVar)}
-	opt := option.WithCredentialsFile(credFile)
+	conf := &firebase.Config{DatabaseURL: os.Getenv(firebaseUrlEnvVar)}
+	opt := option.WithCredentialsFile(os.Getenv(firebaseCredEnvVar))
 	app, err := firebase.NewApp(ctx, conf, opt)
 	if err != nil {
 		log.Fatalln("error in initializing firebase app: ", err)
@@ -43,6 +43,7 @@ func main() {
 
 	server := grpc.NewServer()
 	registerUserService(server, database)
+
 	reflection.Register(server)
 	lis, err := net.Listen(tcp, fmt.Sprintf("localhost:%d", port))
 	if err := server.Serve(lis); err != nil {
