@@ -3,47 +3,26 @@ package mongodb
 import (
 	"context"
 	"errors"
-	"log"
 	"strings"
 
 	"github.com/readactedworks/go-http-server/api/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const (
 	userId = "_id"
 )
 
-type MongoDataStorer interface {
-	InsertOne(
-		ctx context.Context,
-		document interface{},
-		opts ...*options.InsertOneOptions,
-	) (*mongo.InsertOneResult, error)
-	FindOne(
-		ctx context.Context,
-		filter interface{},
-		opts ...*options.FindOneOptions,
-	) *mongo.SingleResult
-	UpdateOne(
-		ctx context.Context,
-		filter interface{},
-		update interface{},
-		opts ...*options.UpdateOptions,
-	) (*mongo.UpdateResult, error)
-}
-
+// UserDatabase provides access to User-specific actions in Mongo database.
 type UserDatabase struct {
-	collection *mongo.Collection
+	Database
 }
 
+// NewUserDatabase creates a new instance of UserDatabase.
 func NewUserDatabase(collection *mongo.Collection) *UserDatabase {
-	return &UserDatabase{
-		collection: collection,
-	}
+	return &UserDatabase{Database{collection: collection}}
 }
 
 // GetUser retrieves a user from the Mongo database.
@@ -58,7 +37,7 @@ func (u *UserDatabase) GetUser(
 	// convert id string to ObjectId
 	objectId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		log.Println("Invalid id")
+		return nil, err
 	}
 
 	filter := bson.D{{userId, objectId}}
@@ -71,9 +50,9 @@ func (u *UserDatabase) GetUser(
 	return &user, nil
 }
 
+// CreateUser generates a new user in the Mongo database.
 func (u *UserDatabase) CreateUser(ctx context.Context, user *model.User) error {
-	_, err := u.collection.
-		InsertOne(ctx, generateDocumentFromUser(user))
+	_, err := u.collection.InsertOne(ctx, convertUserToDoc(user))
 	if err != nil {
 		return err
 	}
@@ -81,21 +60,47 @@ func (u *UserDatabase) CreateUser(ctx context.Context, user *model.User) error {
 	return nil
 }
 
+// UpdateUser updates a user in the Mongo database.
 func (u *UserDatabase) UpdateUser(ctx context.Context, user *model.User) error {
 	filter := bson.D{{userId, user.Id}}
-	update := bson.D{{"$set", generateDocumentFromUser(user)}}
-	_, err := u.collection.UpdateOne(ctx, filter, update)
+	update := bson.D{{"$set", convertUserToDoc(user)}}
+	res, err := u.collection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		return err
 	}
+
+	if res.UpsertedCount != 1 {
+		return errors.New("user not updated")
+	}
+
 	return nil
 }
 
+// DeleteUser deletes a user from the Mongo database.
 func (u *UserDatabase) DeleteUser(ctx context.Context, id string) error {
+	if strings.TrimSpace(id) == "" {
+		return errors.New("id was missing")
+	}
+
+	objectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	filter := bson.D{{userId, objectId}}
+	res, err := u.collection.DeleteOne(ctx, filter)
+	if err != nil {
+		return err
+	}
+
+	if res.DeletedCount != 1 {
+		return errors.New("user not deleted")
+	}
+
 	return nil
 }
 
-func generateDocumentFromUser(user *model.User) bson.D {
+func convertUserToDoc(user *model.User) bson.D {
 	return bson.D{
 		{userId, user.Id},
 		{"name", user.Name},
