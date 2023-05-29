@@ -8,6 +8,7 @@ import (
 
 	"github.com/readactedworks/go-http-server/api/model"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -94,13 +95,22 @@ func (s *UserService) CreateUser(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
+	hashedPassword, err := bcrypt.GenerateFromPassword(
+		[]byte(strings.TrimSpace(request.Password)),
+		bcrypt.DefaultCost,
+	)
+	if err != nil {
+		s.log.Error(err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
 	user := &model.User{
 		Name:     strings.TrimSpace(request.Name),
 		Email:    strings.TrimSpace(request.Email),
-		Password: strings.TrimSpace(request.Password),
+		Password: string(hashedPassword),
 	}
 
-	if err := s.db.CreateUser(ctx, user); err != nil {
+	if err = s.db.CreateUser(ctx, user); err != nil {
 		s.log.
 			WithField(userLogField, user.Id).
 			Error(err)

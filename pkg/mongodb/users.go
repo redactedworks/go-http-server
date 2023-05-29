@@ -52,6 +52,8 @@ func (u *UserDatabase) GetUser(
 
 // CreateUser generates a new user in the Mongo database.
 func (u *UserDatabase) CreateUser(ctx context.Context, user *model.User) error {
+	objectId := primitive.NewObjectID()
+	user.Id = objectId.Hex()
 	_, err := u.collection.InsertOne(ctx, convertUserToDoc(user))
 	if err != nil {
 		return err
@@ -101,8 +103,12 @@ func (u *UserDatabase) DeleteUser(ctx context.Context, id string) error {
 }
 
 func convertUserToDoc(user *model.User) bson.D {
+	objId, err := primitive.ObjectIDFromHex(user.Id)
+	if err != nil {
+		return nil
+	}
 	return bson.D{
-		{userId, user.Id},
+		{userId, objId},
 		{"name", user.Name},
 		{"email", user.Email},
 		{"password", user.Password},
