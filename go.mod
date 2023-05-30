@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	firebase.google.com/go v3.13.0+incompatible
+	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/golang/mock v1.4.4
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2 v2.0.0-rc.3
 	github.com/prometheus/client_golang v1.15.1
@@ -11,6 +12,7 @@ require (
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.1
 	go.mongodb.org/mongo-driver v1.11.6
+	golang.org/x/crypto v0.7.0
 	google.golang.org/api v0.41.0
 	google.golang.org/grpc v1.52.0-dev
 	google.golang.org/protobuf v1.30.0
@@ -46,7 +48,6 @@ require (
 	github.com/xdg-go/stringprep v1.0.3 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
 	go.opencensus.io v0.24.0 // indirect
-	golang.org/x/crypto v0.7.0 // indirect
 	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5 // indirect
 	golang.org/x/mod v0.8.0 // indirect
 	golang.org/x/net v0.10.0 // indirect

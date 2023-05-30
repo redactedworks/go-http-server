@@ -64,14 +64,18 @@ func (u *UserDatabase) CreateUser(ctx context.Context, user *model.User) error {
 
 // UpdateUser updates a user in the Mongo database.
 func (u *UserDatabase) UpdateUser(ctx context.Context, user *model.User) error {
-	filter := bson.D{{userId, user.Id}}
+	objectId, err := primitive.ObjectIDFromHex(user.Id)
+	if err != nil {
+		return err
+	}
+	filter := bson.D{{userId, objectId}}
 	update := bson.D{{"$set", convertUserToDoc(user)}}
 	res, err := u.collection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		return err
 	}
 
-	if res.UpsertedCount != 1 {
+	if res.ModifiedCount != 1 {
 		return errors.New("user not updated")
 	}
 
